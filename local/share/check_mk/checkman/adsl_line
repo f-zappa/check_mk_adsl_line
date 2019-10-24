@@ -1,0 +1,16 @@
+title: ADSL Line
+agents: snmp
+catalog: hw/network/generic
+author: Ulrich Baumann <git@uli-baumann.de>
+license: GPL
+distribution: https://github.com/f-zappa/check_mk_adsl_line
+description:
+ This Check checks status of an ADSL line via the SNMP ADSL-LINE-MIB.
+ Written for and tested with a DrayTek Vigor165, should work on other DrayTek ADSL
+ routers/modems and probably with other hardware (feedback is welcome).
+
+item:
+ according to adslLineSpecific
+
+inventory:
+ One check per ADSL Line is created 
