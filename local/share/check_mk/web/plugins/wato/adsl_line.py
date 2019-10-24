@@ -1,0 +1,1 @@
+../../../../../../../../../opt/omd/sites/bokel/local/share/check_mk/web/plugins/wato/adsl_line.py
