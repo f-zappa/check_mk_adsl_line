@@ -1,1 +1,0 @@
-../../../../../../../../../opt/omd/sites/bokel/local/share/check_mk/web/plugins/metrics/adsl_line.py
