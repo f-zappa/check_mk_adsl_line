@@ -1,3 +1,6 @@
+from cmk.gui.i18n import _
+#from cmk.gui.plugins.metrics import metric_info
+
 check_metrics["check_mk-adsl_line"] = {
         "adsl_down_rate": { "name" : "adsl_down_rate" },
         "adsl_up_rate": { "name" : "adsl_up_rate" },
