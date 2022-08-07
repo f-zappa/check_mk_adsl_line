@@ -24,8 +24,9 @@
 # 1.3.6.1.2.1.10.94.1.1.4.1.2 adslAtucChanCurrTxRate (DSL router's Rx Rate)
 # 1.3.6.1.2.1.10.94.1.1.5.1.1 adslAturChanInterleaveDelay
 # 1.3.6.1.2.1.10.94.1.1.5.1.2 adslAturChanCurrTxRate (DSL router's Tx rate)
-# 1.3.6.1.2.1.10.94.1.1.5.1.3 adslAturChanPrevTxRate
+# 1.3.6.1.2.1.10.94.1.1.5.1.3 adslAtucChanPrevTxRate
 # 1.3.6.1.2.1.10.94.1.1.5.1.4 adslAturChanCrcBlockLength
+# 1.3.6.1.2.1.10.251.1.2.2.1.2.4 xdsl2ChStatusActDataRate
 
 from .agent_based_api.v1 import *
 from .utils.interfaces import cleanup_if_strings
@@ -34,7 +35,7 @@ from cmk.base.check_api import get_nic_speed_human_readable
 
 # helper function for combining states
 def worst(old,new):
-    if (new==State.CRIT) or (old==State.CRIT):
+    if (new==State.CRIT) or (old==State.CRIT): 
       return State.CRIT
     elif (new==State.WARN) or (old==State.WARN):
       return State.WARN
@@ -45,7 +46,8 @@ def discover_adsl_line(section):
     for oid_end,adslLineCoding, adslLineType, adslLineSpecific, \
         adslAturInvSerialNumber, adslAturInvVendorID, adslAturInvVersionNumber, \
         adslAturCurrSnrMgn, adslAturCurrAtn, adslAturCurrStatus, adslAturCurrOutputPwr, \
-        adslAturCurrAttainableRate, adslAtucChanCurrTxRate, adslAturChanCurrTxRate \
+        adslAturCurrAttainableRate, adslAtucChanCurrTxRate, adslAturChanCurrTxRate, \
+        xdsl2ChStatusActDataRate \
     in section:
         yield Service(item=oid_end)  # item name follows oid enumeration
 
@@ -59,7 +61,8 @@ def check_adsl_line(item, params, section):
     for oid_end,adslLineCoding, adslLineType, adslLineSpecific, \
         adslAturInvSerialNumber, adslAturInvVendorID, adslAturInvVersionNumber, \
         adslAturCurrSnrMgn, adslAturCurrAtn, adslAturCurrStatus, adslAturCurrOutputPwr, \
-        adslAturCurrAttainableRate, adslAtucChanCurrTxRate, adslAturChanCurrTxRate \
+        adslAturCurrAttainableRate, adslAtucChanCurrTxRate, adslAturChanCurrTxRate, \
+        xdsl2ChStatusActDataRate \
     in section:
         if (item != oid_end): continue
         status = State.OK
@@ -71,20 +74,29 @@ def check_adsl_line(item, params, section):
         if adslAturCurrStatus != "SHOWTIME":
             status = worst(status, State.CRIT)
         # check upstream
-        statusString += ', Up: '+get_nic_speed_human_readable(adslAturChanCurrTxRate)
-        if 'upstream_params' in params:
-            upstream_warn,upstream_crit = params['upstream_params']
-            upstream_warn=int(upstream_warn)*10**6
-            upstream_crit=int(upstream_crit)*10**6
-            if int(adslAturChanCurrTxRate) < upstream_crit:
-                status = worst(status, State.CRIT)
-                statusString += ' (CRIT at '+get_nic_speed_human_readable(upstream_crit)+')'
-            elif int(adslAturChanCurrTxRate) < upstream_warn:
-                status = worst(status, State.WARN)
-                statusString += ' (WARN at '+get_nic_speed_human_readable(upstream_warn)+')'
-        else: upstream_warn,upstream_crit=None,None
-        yield Metric("adsl_up_rate",int(adslAturChanCurrTxRate), levels=(upstream_warn,upstream_crit))
+        if int(adslAturChanCurrTxRate) > 0: 
+          # there is a adsl2 value
+          statusString += ', Up: '+get_nic_speed_human_readable(adslAturChanCurrTxRate)
+          if 'upstream_params' in params:
+              upstream_warn,upstream_crit = params['upstream_params']
+              upstream_warn=int(upstream_warn)*10**6
+              upstream_crit=int(upstream_crit)*10**6
+              if int(adslAturChanCurrTxRate) < upstream_crit:
+                  status = worst(status, State.CRIT)
+                  statusString += ' (CRIT at '+get_nic_speed_human_readable(upstream_crit)+')'
+              elif int(adslAturChanCurrTxRate) < upstream_warn:
+                  status = worst(status, State.WARN)
+                  statusString += ' (WARN at '+get_nic_speed_human_readable(upstream_warn)+')'
+          else: upstream_warn,upstream_crit=None,None
+          yield Metric("adsl_up_rate",int(adslAturChanCurrTxRate), levels=(upstream_warn,upstream_crit))
+        else: 
+          # no value in snmp 
+          statusString += ', Up: N/A'
+          yield Metric("adsl_up_rate",int(adslAturChanCurrTxRate))
+
         # check downstream
+        if int(adslAtucChanCurrTxRate) == 0:
+          adslAtucChanCurrTxRate=xdsl2ChStatusActDataRate
         statusString += ', Down: '+get_nic_speed_human_readable(adslAtucChanCurrTxRate)
         if 'downstream_params' in params:
             downstream_warn,downstream_crit = params['downstream_params']
@@ -133,7 +145,7 @@ def check_adsl_line(item, params, section):
         statusString +=  ', '+\
         'Output Power: '+adslAturCurrOutputPwr+' db, '+\
         'Line Coding: '+adslLineCodings.get(int(adslLineCoding),"unknown")+', '+\
-        'Line Type: '+adslLineTypes.get(int(adslLineType),"unknown")
+        'Line Type: '+adslLineTypes.get(int(adslLineType),"unknown") 
         yield Metric("adsl_output_power",int(adslAturCurrOutputPwr))
 
         yield Result(state=status,summary=f"{statusString}")
@@ -141,26 +153,27 @@ def check_adsl_line(item, params, section):
 
 register.snmp_section(
     name = "adsl_line",
-    detect = matches(".1.3.6.1.2.1.1.1.0", ".*Vigor(130|165).*"),
+    detect = matches(".1.3.6.1.2.1.1.1.0", ".*Vigor(130|165|166).*"),
     fetch = SNMPTree(
-      base = '.1.3.6.1.2.1.10.94.1.1',
+      base = '.1.3.6.1.2.1.10',
       oids = [
        OIDEnd(), # interface number
-       "1.1.1", # adslLineCoding
-       "1.1.2", # adslLineType
-       "1.1.3", # adslLineSpecific
-       "3.1.1", # adslAturInvSerialNumber
-       "3.1.2", # adslAturInvVendorID
-       "3.1.3", # adslAturInvVersionNumber
-       "3.1.4", # adslAturCurrSnrMgn
-       "3.1.5", # adslAturCurrAtn
-       "3.1.6", # adslAturCurrStatus
-       "3.1.7", # adslAturCurrOutputPwr
-       "3.1.8", # adslAturCurrAttainableRate
-       "4.1.2", # adslAtucChanCurrTxRate
-       "5.1.2", # adslAtucChanCurrTxRate
+       "94.1.1.1.1.1", # adslLineCoding
+       "94.1.1.1.1.2", # adslLineType
+       "94.1.1.1.1.3", # adslLineSpecific
+       "94.1.1.3.1.1", # adslAturInvSerialNumber
+       "94.1.1.3.1.2", # adslAturInvVendorID
+       "94.1.1.3.1.3", # adslAturInvVersionNumber
+       "94.1.1.3.1.4", # adslAturCurrSnrMgn
+       "94.1.1.3.1.5", # adslAturCurrAtn
+       "94.1.1.3.1.6", # adslAturCurrStatus
+       "94.1.1.3.1.7", # adslAturCurrOutputPwr
+       "94.1.1.3.1.8", # adslAturCurrAttainableRate
+       "94.1.1.4.1.2", # adslAtucChanCurrTxRate
+       "94.1.1.5.1.2", # adslAtucChanCurrRxRate
+       "251.1.2.2.1.2",# xdsl2ChStatusActDataRate 
        ] ),
-) 
+)
 
 CHECK_DEFAULT_PARAMETERS = {
   'downstream_params': (0,0),
