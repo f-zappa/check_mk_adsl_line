@@ -32,32 +32,32 @@ def _parameter_valuespec_adsl_line():
                     title='Upstream Rate',
                     help = _('Minimum Upstream Rate'),
                     elements = [
-                        Integer(title=_('Warning below'),unit='Mbit/s',default_value='15'),
-                        Integer(title=_('Critical below'),unit='Mbit/s',default_value='10'),
+                        Integer(title=_('Warning below'),unit='Mbit/s',default_value=15),
+                        Integer(title=_('Critical below'),unit='Mbit/s',default_value=10),
                         ] ) ),
            ('downstream_params',
                Tuple(
                     title='Downstream Rate',
                     help = _('Minimum Downstream Rate'),
                     elements = [
-                        Integer(title=_('Warning below'),unit='Mbit/s',default_value='50'),
-                        Integer(title=_('Critical below'),unit='Mbit/s',default_value='10'),
+                        Integer(title=_('Warning below'),unit='Mbit/s',default_value=50),
+                        Integer(title=_('Critical below'),unit='Mbit/s',default_value=10),
                         ] ) ),
             ('snr_margin_params',
                 Tuple(
                     title='SNR Margin',
                     help = _('Minimum SNR Margin'),
                     elements = [
-                        Integer(title=_('Warning below'),unit='dB',default_value='10'),
-                        Integer(title=_('Critical below'),unit='dB',default_value='5'),
+                        Integer(title=_('Warning below'),unit='dB',default_value=10),
+                        Integer(title=_('Critical below'),unit='dB',default_value=5),
                         ] ) ),
             ('attenuation_params',
                 Tuple(
                     title='Attenuation',
                     help = _('Maximum Attenuation'),
                     elements = [
-                        Integer(title=_('Warning above'),unit='dB',default_value='30'),
-                        Integer(title=_('Critical above'),unit='dB',default_value='45'),
+                        Integer(title=_('Warning above'),unit='dB',default_value=30),
+                        Integer(title=_('Critical above'),unit='dB',default_value=45),
                         ] ) ),
             ]
         )
